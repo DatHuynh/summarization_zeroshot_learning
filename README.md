@@ -16,7 +16,7 @@ Used [Glove pre-trained vectors](https://nlp.stanford.edu/projects/glove/) to in
 ## Download data and model
 
 ### Download visual training data
-The Animal with Attribute dataset is preprocessing using ResNet and stored into TFRecord format for high-capacity data loading in tensorflow. To run the model,  download [pre_trained.zip](https://drive.google.com/file/d/1V8pS1eoiv51wfiVp2rOB7IvJ5PeQs2n-/view?usp=sharing), and locate it in the project root directory. Then,
+The Animal with Attribute dataset is preprocessing using ResNet and stored into TFRecord format for high-capacity data loading in tensorflow. To run the model,  download [TFRecord.zip](https://drive.google.com/file/d/1V8pS1eoiv51wfiVp2rOB7IvJ5PeQs2n-/view?usp=sharing), and locate it in the project root directory. Then,
 ```
 $ unzip TFRecord.zip
 ```
