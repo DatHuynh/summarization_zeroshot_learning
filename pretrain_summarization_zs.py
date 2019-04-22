@@ -14,7 +14,7 @@ import os
 import numpy as np
 import pandas as pd
 import pdb
-#%%
+#%% Define experimential setting
 idx_GPU=0
 os.environ["CUDA_VISIBLE_DEVICES"]="{}".format(idx_GPU)
 is_save = False
@@ -28,7 +28,7 @@ path_w2v = './data/{}.npy'.format(w2v_model)
 #docker_path = '/home/project_amadeus/'
 #save_dir = os.path.join(docker_path,'/mnt/raptor/hbdat/summarized_zs/'+w2v_model+'_alpha_{}')
 save_dir = './results/'+w2v_model+'/alpha_{}'
-#%%
+#%% load wiki data
 w2v=np.load(path_w2v)
 n_class = w2v.shape[0]
 n_w_dim = w2v.shape[1]
@@ -49,7 +49,7 @@ word_dict, reversed_dict, _, _= build_dict("valid", args.toy)
 print("Loading validation dataset...")
 wiki_context = build_wiki_text(wiki_data, word_dict, article_max_len)
 string_context = decode_id(wiki_context,reversed_dict)
-#%%
+#%% define TFRecord parse for high capacity data loading
 def parser(record):
     feature = {'img_id': tf.FixedLenFeature([], tf.string),
                'feature': tf.FixedLenFeature([], tf.string),
@@ -64,7 +64,7 @@ def parser(record):
     return img_id,feature,label,attribute
 #%%
 sess = tf.InteractiveSession()
-#%%
+#%% load training data
 dataset_temp = tf.data.TFRecordDataset(global_setting_AWA2.train_path)
 dataset_temp = dataset_temp.map(parser).batch(50000)
 (_,_,labels_temp,_) = dataset_temp.make_one_shot_iterator().get_next()
@@ -79,12 +79,12 @@ dataset = dataset.batch(batch_size)
 dataset = dataset.repeat()
 iterator = dataset.make_initializable_iterator()
 (ids_tr,fs_tr,labels_tr,attrs_tr) = iterator.get_next()
-#%%
+#%% load testing data
 dataset_tst = tf.data.TFRecordDataset(global_setting_AWA2.test_path)
 dataset_tst = dataset_tst.map(parser).batch(50000)
 (ids_tst,fs_tst,labels_tst,attrs_tst) = dataset_tst.make_one_shot_iterator().get_next()
 (ids_tst,fs_tst,labels_tst,attrs_tst)=sess.run([ids_tst,fs_tst,labels_tst,attrs_tst])
-#%%
+#%% evaluation function
 def evaluate_macro(idx_preds_test_v,labels_tst):
     count = 0.0
     for idx,l in enumerate(labels_tst):
@@ -109,13 +109,13 @@ def evaluate_micro(idx_preds_test_v,labels_tst):
     acc_seen = np.mean(acc_per_class[seen_classes])
     acc_unseen = np.mean(acc_per_class[unseen_classes])
     return acc_all,acc_seen,acc_unseen,acc_per_class
-#%%
+#%% model definition
 alpha = tf.Variable(0.0,name='alpha',dtype = tf.float32, trainable=False)
 with tf.variable_scope(tf.get_variable_scope()):
     model = Model(reversed_dict, article_max_len, summary_max_len, args, w2v=w2v,alpha_summary=alpha,opt_var_type=0)
 wiki_context = np.array(wiki_context)
 context_len = [len([y for y in x if y != 0]) for x in wiki_context]
-#%%
+#%% [Qualitative result] get important keywords for each classes
 restored_vars = [p for p in tf.trainable_variables() if 'zeroshot' not in p.name]
 saver = tf.train.Saver(restored_vars)
 ckpt = tf.train.get_checkpoint_state("./saved_model/")
@@ -134,7 +134,7 @@ def get_keywords():
         keywords = " ".join(line)
         wiki_keywords.append(keywords)
     return wiki_keywords
-#%%
+#%% Run experiment on different alphas
 for alpha_v in alphas:
     print('-'*30)
     print('alpha {}'.format(alpha_v))

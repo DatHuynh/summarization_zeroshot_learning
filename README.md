@@ -20,6 +20,8 @@ The Animal with Attribute dataset is preprocessing using ResNet and stored into 
 ```
 $ unzip TFRecord.zip
 ```
+Original data can be download here [AWA2-data.zip](https://cvml.ist.ac.at/AwA2/AwA2-data.zip)
+
 
 ### Download pretrained seq2seq model 
 To use pre-trained seq2seq model (this is trained on the task of text summarization without zero-shot learning), download [pre_trained.zip](https://drive.google.com/file/d/1V8pS1eoiv51wfiVp2rOB7IvJ5PeQs2n-/view?usp=sharing), and locate it in the project root directory. Then,
@@ -56,3 +58,6 @@ We have include the extracted wikipedia in ```./wiki_data/wiki_article.pkl```. T
 ```
 $ python ./get_wiki_text.py
 ```
+
+## Sample input
+Sample input can be found in ```./sample_input/```

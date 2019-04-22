@@ -28,12 +28,12 @@ batch_size=32
 idx_GPU=1
 os.environ["CUDA_VISIBLE_DEVICES"]="{}".format(idx_GPU)
 path_w2v = './data/glove_vecs.npy'
-#%%
+#%% load embedding data
 w2v=np.load(path_w2v)
 n_class = w2v.shape[0]
 n_w_dim = w2v.shape[1]
 w2v = np.transpose(w2v).astype(np.float32)
-#%% Dataset
+#%% define TFRecord parse for high capacity data loading
 def parser(record):
     feature = {'img_id': tf.FixedLenFeature([], tf.string),
                'feature': tf.FixedLenFeature([], tf.string),
@@ -48,7 +48,7 @@ def parser(record):
     return img_id,feature,label,attribute
 #%%
 sess = tf.InteractiveSession()
-#%%
+#%% load training data
 dataset = tf.data.TFRecordDataset(global_setting_AWA2.train_path)
 dataset = dataset.map(parser)
 dataset = dataset.shuffle(20000)
@@ -56,32 +56,32 @@ dataset = dataset.batch(batch_size)
 dataset = dataset.repeat()
 iterator = dataset.make_initializable_iterator()
 (ids_tr,fs_tr,labels_tr,attrs_tr) = iterator.get_next()
-#%%
+#%% load testing data
 dataset_tst = tf.data.TFRecordDataset(global_setting_AWA2.test_path)
 dataset_tst = dataset_tst.map(parser).batch(50000)
 (ids_tst,fs_tst,labels_tst,attrs_tst) = dataset_tst.make_one_shot_iterator().get_next()
 (ids_tst,fs_tst,labels_tst,attrs_tst)=sess.run([ids_tst,fs_tst,labels_tst,attrs_tst])
-#%%
-W = tf.get_variable('W',shape=[2048,n_w_dim])
-preds=tf.matmul(fs_tr,tf.matmul(W,w2v))
+#%% 
+W = tf.get_variable('W',shape=[2048,n_w_dim])   # embedding function
+preds=tf.matmul(fs_tr,tf.matmul(W,w2v))         
 mask = tf.reshape(tf.one_hot(labels_tr,n_class,on_value=True,off_value=False),[-1,n_class])
 preds_target = tf.boolean_mask(preds,mask)
-preds_max = tf.reduce_max(preds,axis = 1)
-loss = tf.reduce_mean(tf.maximum(1+preds_max-preds_target,0))
-#%%
+preds_max = tf.reduce_max(preds,axis = 1)       # maximum prediction score
+loss = tf.reduce_mean(tf.maximum(1+preds_max-preds_target,0)) # loss
+#%% optimizer
 optimizer = tf.train.RMSPropOptimizer(learning_rate_base)
 grad_vars = optimizer.compute_gradients(loss)
-train = optimizer.apply_gradients(grad_vars)#optimizer.minimize(loss,var_list=[Theta,G_var])#
-
-_,idx_preds_test = tf.nn.top_k(tf.matmul(fs_tst,tf.matmul(W,w2v)),k=3)
+train = optimizer.apply_gradients(grad_vars)
 #%%
+_,idx_preds_test = tf.nn.top_k(tf.matmul(fs_tst,tf.matmul(W,w2v)),k=3)  # top 3 accuracy error
+#%% evaluation
 def evaluate(idx_preds_test_v,labels_tst):
     count = 0.0
     for idx,l in enumerate(labels_tst):
         if l in idx_preds_test_v[idx]:
             count+=1.0
     return count /len(labels_tst)
-#%%
+#%% training
 tf.global_variables_initializer().run()
 sess.run(iterator.initializer)
 for i in range(1000):
